@@ -9,8 +9,13 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
-from rest_framework import authentication, permissions
+from rest_framework import authentication, permissions, generics
 # Create your views here.
+
+gender = {'1':'male', '2':'female'}
+designation = ['Engineer', 'Sr.Engineer', 'Module Lead', 'Technical Lead', 'Project Lead', 'Associate Manager', 'Project Manager']
+leavetype = ['personal', 'sick', 'casual']
+roles = {1:'admin',2: 'manager', 3:'employee'}
 
 ####### Decorators #######
 @api_view(['GET', 'POST'])
@@ -27,12 +32,14 @@ def Emp_list(request, format = None):
 
     if request.method == 'POST':
         serializer = EmpDetailSerializer(data = request.data)
-        # print(serializer)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status = status.HTTP_201_CREATED)
+        if serializer["eligible_leave"] > 5:
+            print("you are exceedind the limit 5")
         else:
-            print(serializer.errors)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status = status.HTTP_201_CREATED)
+            else:
+                print(serializer.errors)
 
 ####### Decorators #######
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -75,12 +82,39 @@ class LeaveRequestView(APIView):
         serializer = LeaveRequestSerializer(Product_data, many = True)
         return Response(serializer.data)
     
-class LeaveRequestFilterView(APIView):
-    authentication_classes = [authentication .TokenAuthentication]
-    permissions_classes = [permissions . IsAuthenticated]
-    def get(self, request):
-        leave_type = request.GET.get('leave_type', '')
-        leave_requests = LeaveRequest.objects.filter(leave_type=leave_type)
-        serializer = LeaveRequestSerializer(leave_requests, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+class LeaveRequestByLeaveTypeView(generics.ListAPIView):
+    serializer_class = LeaveRequestSerializer
+
+    def get_queryset(self):
+        leave_type = self.kwargs['leave_type']
+        return LeaveRequest.objects.filter(leave_type=leave_type)
+
+class LeaveRequestApproveView(generics.UpdateAPIView):
+    queryset = LeaveRequest.objects.all()
+    serializer_class = LeaveRequestSerializer(queryset, many = True)
+
+    def put(self, request, *args, **kwargs):
+        leave_request = self.get_object()
+        leave_request.approved = True
+        leave_request.approved_by = request.user
+        leave_request.save()
+        return Response(status=status.HTTP_200_OK)
     
+class LeaveRequestCancelView(generics.UpdateAPIView):
+    queryset = LeaveRequest.objects.all()
+    serializer_class = LeaveRequestSerializer(queryset, many = True)
+
+    def put(self, request, *args, **kwargs):
+        leave_request = self.get_object()
+        leave_request.cancelled = True
+        leave_request.cancelled_by = request.user
+        leave_request.cancel_reason = request.data.get('cancel_reason', '')
+        leave_request.save()
+        return Response(status=status.HTTP_200_OK)
+
+class LeaveRequestByEmployeeView(generics.ListAPIView):
+    serializer_class = LeaveRequestSerializer
+
+    def get_queryset(self):
+        employee_name = self.kwargs['employee_name']
+        return LeaveRequest.objects.filter(employee_name=employee_name)
