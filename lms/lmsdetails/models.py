@@ -8,6 +8,12 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 
+# class Roles(models.Model):
+    
+#     Name = models.CharField(max_length =255)
+#     empid = models.PositiveIntegerField(validators=[MaxValueValidator(9999999999)],unique = True)
+#     Role = models.CharField(max_length =255)
+    
 class EmpDetails(models.Model):
     
     Name = models.CharField(max_length =255)
@@ -23,11 +29,20 @@ class EmpDetails(models.Model):
         return self.Name 
     
 class LeaveRequest(models.Model):
+    LEAVE_TYPE_CHOICES = [
+        ('annual', 'Annual Leave'),
+        ('sick', 'Sick Leave'),
+        ('casual', 'casual Leave'),
+    ]
+
     employee_name = models.CharField(max_length=255)
-    leave_type = models.CharField(max_length=255)
+    leave_type = models.CharField(choices=LEAVE_TYPE_CHOICES, max_length=20)
     leave_reason = models.CharField(max_length=255)
     requesting_to = models.CharField(max_length=255)
+    leave_status = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    cancel_reason = models.CharField(max_length=255, null=True, blank=True)
+    lop_status = models.BooleanField(default=False)
 
 @receiver(post_save, sender = settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance = None, created = False, **kwargs):
