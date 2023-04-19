@@ -1,47 +1,43 @@
 from django.shortcuts import render
-from .models import EmpDetails, LeaveRequest
+from .models import EmpDetails, LeaveRequest, User
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from .serializers import EmpDetailSerializer, LeaveRequestSerializer
+from .serializers import EmpDetailSerializer, LeaveRequestSerializer, UserSerializer, EmployeeSerializer, AdminSerializer
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from rest_framework import authentication, permissions, generics
 from rest_framework import viewsets
 from django.db.models import Count
 
-# Create your views here.
-####### Decorators #######
-# @api_view(['GET', 'POST'])
-# ####### Authentication #######
-# # @authentication_classes([BasicAuthentication])
-# @authentication_classes([TokenAuthentication])
-# @permission_classes([IsAuthenticated])
-# ####### Authentication #######
-# def create_role(request, format = None):
-#     if request.method == 'GET':
-#         Product_data = Roles.objects.all()
-#         serializer = RolesSerializer(Product_data, many = True)
-#         return Response(serializer.data)
+ 
+class IsAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        print (request.user)
+        return request.user.is_authenticated and (request.user.is_admin or request.user.is_superuser)
+    
+class AdminListCreateView(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = AdminSerializer
+    permission_classes = [IsAuthenticated]
 
-#     if request.method == 'POST':
-#         serializer = Roles(data = request.data)
-#         if serializer.is_valid():  
-#             serializer.save()
-#             return Response(serializer.data, status = status.HTTP_201_CREATED)
-#         else:
-#             print(serializer.errors)
+class AdminView(generics.RetrieveUpdateAPIView):
+    serializer_class = AdminSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
+    def get_object(self):
+        return self.request.user
+    
 # Create your views here.
 ####### Decorators #######
 @api_view(['GET', 'POST'])
 ####### Authentication #######
 # @authentication_classes([BasicAuthentication])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([IsAuthenticated, IsAdmin])
 ####### Authentication #######
 def Emp_list(request, format = None):
     if request.method == 'GET':
@@ -65,7 +61,7 @@ def Emp_list(request, format = None):
 ####### Authentication #######
 # @authentication_classes([BasicAuthentication])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated, IsAdminUser])
+@permission_classes([IsAuthenticated, IsAdmin])
 ####### Authentication #######
 def Emp_detail(request, id, format = None):
     try:
@@ -85,10 +81,28 @@ def Emp_detail(request, id, format = None):
     if request.method == 'DELETE':
         Product_data.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
+  
+class IsEmployee(permissions.BasePermission):
+    def has_permission(self, request, view):
+        print (request.user)
+        return request.user.is_authenticated and request.user.is_employee
+
+class EmployeeListCreateView(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated]
+
+class EmployeeView(generics.RetrieveUpdateAPIView):
+    serializer_class = EmployeeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
 class LeaveRequestView(APIView):
     authentication_classes = [authentication .TokenAuthentication]
-    permissions_classes = [permissions . IsAuthenticated]
+    permissions_classes = [permissions . IsAuthenticated, IsEmployee]
     def post(self, request):
         serializer = LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
@@ -100,6 +114,32 @@ class LeaveRequestView(APIView):
         Product_data = LeaveRequest.objects.all()
         serializer = LeaveRequestSerializer(Product_data, many = True)
         return Response(serializer.data)
+
+####### Decorators #######
+@api_view(['GET', 'PUT', 'DELETE'])
+####### Authentication #######
+# @authentication_classes([BasicAuthentication])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, IsEmployee])
+####### Authentication #######
+def LeaveRequestbyId(request, id, format = None):
+    try:
+        Product_data = LeaveRequest.objects.get(pk = id)
+    except LeaveRequest.DoesNotExist:
+        return Response(satus =status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = LeaveRequestSerializer(Product_data)
+        return Response(serializer.data)
+    if request.method == 'PUT':
+        serializer = LeaveRequestSerializer(Product_data, data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == 'DELETE':
+        Product_data.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
 # class LeaveRequestByLeaveTypeView(generics.ListAPIView):
 #     serializer_class = LeaveRequestSerializer
@@ -115,6 +155,22 @@ class LeaveRequestView(APIView):
 #         employee_name = self.kwargs['employee_name']
 #         return LeaveRequest.objects.filter(employee_name=employee_name)
 
+class IsManager(permissions.BasePermission):
+    def has_permission(self, request, view):
+        print (request.user)
+        return request.user.is_authenticated and (request.user.is_manager or request.user.is_superuser)
+
+class UserListCreateView(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
 class LeaveRequestListView(generics.ListAPIView):
     """
     Full Leave Request List http://127.0.0.1:8000/leave-request/list/ and also
@@ -122,7 +178,7 @@ class LeaveRequestListView(generics.ListAPIView):
     Filtering list with leave type http://127.0.0.1:8000/leave-request/list/?leave_type=sick
     """
     authentication_classes = [authentication .TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsManager]
 
     serializer_class = LeaveRequestSerializer
 
@@ -135,10 +191,12 @@ class LeaveRequestListView(generics.ListAPIView):
         if leave_type is not None:
             queryset = queryset.filter(leave_type=leave_type)
         return queryset
-
+  
+       
 class LeaveRequestViewSet(viewsets.ModelViewSet):
-    authentication_classes = [authentication .TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    # authentication_classes = [authentication .TokenAuthentication]
+    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsManager]
     
     queryset = LeaveRequest.objects.all()
     serializer_class = LeaveRequestSerializer

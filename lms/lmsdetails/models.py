@@ -4,16 +4,15 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 
-# class Roles(models.Model):
-    
-#     Name = models.CharField(max_length =255)
-#     empid = models.PositiveIntegerField(validators=[MaxValueValidator(9999999999)],unique = True)
-#     Role = models.CharField(max_length =255)
-    
+class User(AbstractUser):
+    is_manager = models.BooleanField(default=False)
+    is_employee = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
+
 class EmpDetails(models.Model):
     
     Name = models.CharField(max_length =255)
