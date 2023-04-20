@@ -17,7 +17,7 @@ from django.db.models import Count
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         print (request.user)
-        return request.user.is_authenticated and (request.user.is_admin or request.user.is_superuser)
+        return request.user.is_authenticated and request.user.is_admin
     
 class AdminListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all()
@@ -158,7 +158,8 @@ def LeaveRequestbyId(request, id, format = None):
 class IsManager(permissions.BasePermission):
     def has_permission(self, request, view):
         print (request.user)
-        return request.user.is_authenticated and (request.user.is_manager or request.user.is_superuser)
+        return request.user.is_authenticated and request.user.is_manager
+        # return request.user.is_authenticated and (request.user.is_manager or request.user.is_superuser)
 
 class UserListCreateView(generics.ListCreateAPIView):
     queryset = User.objects.all()

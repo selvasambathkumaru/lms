@@ -10,9 +10,9 @@ app_name = 'lmsdetails'
 urlpatterns = [
     path('employee/login/', obtain_auth_token),   
     path('employees/', views.Emp_list),
-    path('employees/<int:id>', views.Emp_detail),
+    path('employees/<int:id>/', views.Emp_detail),
     path('leave-request/', LeaveRequestView.as_view()),
-    path('leave-request/<int:id>', views.LeaveRequestbyId),
+    path('leave-request/<int:id>/', views.LeaveRequestbyId),
     path('emp_users/', EmployeeListCreateView.as_view(), name='employee-list-create'),
     path('emp_users/<int:pk>/', EmployeeView.as_view(), name='user-retrieve-update-destroy'),
     path('admin_users/', AdminListCreateView.as_view(), name='admin-list-create'),

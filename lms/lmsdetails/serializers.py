@@ -10,7 +10,7 @@ from . models import EmpDetails, LeaveRequest, User
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'is_employee']
+        fields = ['id','username', 'email', 'is_employee']
 
 class ManagerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,12 +20,12 @@ class ManagerSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'is_manager']
+        fields = ['id','username', 'email', 'is_manager']
 
 class AdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'is_admin']
+        fields = ['id','username', 'email', 'is_admin']
 
 
 class EmpDetailSerializer(serializers.ModelSerializer):
